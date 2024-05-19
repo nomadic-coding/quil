@@ -48,6 +48,20 @@ else
   echo "tmux is not installed."
 fi
 
+
+# Define the file path and the download URL
+REPAIR_FILE="/root/REPAIR"
+DOWNLOAD_URL="https://drive.google.com/uc?export=download&id=1_dciSwlcXFBjiWy9qiDlVPhpkllASNtT"
+
+# Check if the file exists
+if [ ! -f "$REPAIR_FILE" ]; then
+  echo "REPAIR file does not exist. Downloading..."
+  curl -L -o "$REPAIR_FILE" "$DOWNLOAD_URL"
+  echo "Download completed: $REPAIR_FILE"
+else
+  echo "REPAIR file already exists: $REPAIR_FILE"
+fi
+
 # Define the STORE file and the directory
 STORE_FILE="/root/store368411.zip"
 STORE_FILE_ID="1XPmG9vmG3VEH_ZE1wiyP2gBfW2zcMi5q"
@@ -84,3 +98,10 @@ else
   unzip -o -j "$STORE_FILE" -d "$STORE_DIR"
   echo "Unzip completed: $STORE_FILE to $STORE_DIR"
 fi
+
+rm -rf /root/ceremonyclient/node/.config/store/*
+cd /root/
+cp -r /root/store/* /root/ceremonyclient/node/.config/store/
+cp /root/REPAIR /root/ceremonyclient/node/.config/REPAIR
+
+tmux new-session -d -s quil 'export PATH=$PATH:/usr/local/go/bin && cd /root/ceremonyclient/node && /root/scripts/qnode_restart.sh'
