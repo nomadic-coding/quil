@@ -32,7 +32,7 @@ fi
 
 # Define the file path and the download URL
 REPAIR_FILE="/root/REPAIR"
-DOWNLOAD_URL="http://91.188.254.197:10001/REPAIR"
+DOWNLOAD_URL="https://snapshots.cherryservers.com/quilibrium/repair"
 
 # Check if the file exists
 if [ ! -f "$REPAIR_FILE" ]; then
@@ -44,8 +44,8 @@ else
 fi
 
 # Define the STORE file and the directory
-STORE_FILE="/root/store368411.zip"
-STORE_FILE_URL="http://91.188.254.197:10001/store368411.zip"
+STORE_FILE="/root/store.zip"
+STORE_FILE_URL="https://snapshots.cherryservers.com/quilibrium/store.zip"
 STORE_DIR="/root/store"
 
 # Download the STORE file if it doesn't exist
@@ -74,7 +74,6 @@ else
 fi
 
 rm -rf /root/ceremonyclient/node/.config/store/*
-cd /root/
 cp -r /root/store/* /root/ceremonyclient/node/.config/store/
 cp /root/REPAIR /root/ceremonyclient/node/.config/REPAIR
 
