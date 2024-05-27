@@ -20,8 +20,10 @@ check_for_updates() {
     echo "Switching to the $BRANCH branch and discarding local changes"
     git fetch
     git checkout $BRANCH
+    git restore --staged . # Unstage any staged changes
+    git restore .          # Discard any local changes
+    git clean -fd          # Remove any untracked files and directories
     git reset --hard origin/$BRANCH
-    git clean -fd
 
     # Check if the local branch is behind the remote branch
     if git fetch && git status | grep -q "Your branch is behind"; then
@@ -32,8 +34,10 @@ check_for_updates() {
         systemctl stop $SERVICE_NAME
         
         # Discard any local changes
-        git reset --hard origin/$BRANCH
+        git restore --staged .
+        git restore .
         git clean -fd
+        git reset --hard origin/$BRANCH
         
         # Pull the latest updates
         git pull
