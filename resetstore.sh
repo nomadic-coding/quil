@@ -15,6 +15,7 @@ else
   echo "unzip is already installed."
 fi
 
+rm -rf /root/store*
 service ceremonyclient stop
 
 # Define the file path and the download URL
