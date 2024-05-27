@@ -19,8 +19,9 @@ check_for_updates() {
     # Ensure we are on the release branch and discard any local changes
     echo "Switching to the $BRANCH branch and discarding local changes"
     git fetch
+    git checkout $BRANCH
     git reset --hard origin/$BRANCH
-    git checkout --force $BRANCH
+    git clean -fd
 
     # Check if the local branch is behind the remote branch
     if git fetch && git status | grep -q "Your branch is behind"; then
@@ -32,6 +33,7 @@ check_for_updates() {
         
         # Discard any local changes
         git reset --hard origin/$BRANCH
+        git clean -fd
         
         # Pull the latest updates
         git pull
