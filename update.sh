@@ -22,16 +22,16 @@ check_for_updates() {
     git reset --hard origin/$BRANCH
     git checkout --force $BRANCH
 
-    # Fetch updates from the remote repository
-    git fetch
-    
     # Check if the local branch is behind the remote branch
-    if git status | grep -q "Your branch is behind"; then
+    if git fetch && git status | grep -q "Your branch is behind"; then
         echo "Updates found. Pulling the latest changes..."
         
         echo "Stopping the service: $SERVICE_NAME"
         # Stop the service
         systemctl stop $SERVICE_NAME
+        
+        # Discard any local changes
+        git reset --hard origin/$BRANCH
         
         # Pull the latest updates
         git pull
@@ -52,7 +52,7 @@ check_for_updates() {
             systemctl restart $SERVICE_NAME
         else
             echo "Error: No valid binary found in the repository. The service will not be restarted."
-        }
+        fi
     else
         echo "No updates found. The repository is up to date."
     fi
