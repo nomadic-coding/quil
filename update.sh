@@ -15,15 +15,6 @@ BRANCH="release"
 # Function to check for updates and handle the service accordingly
 check_for_updates() {
     cd $REPO_PATH
-    
-    # Ensure we are on the release branch and discard any local changes
-    echo "Switching to the $BRANCH branch and discarding local changes"
-    git fetch
-    git checkout $BRANCH
-    git restore --staged . # Unstage any staged changes
-    git restore .          # Discard any local changes
-    git clean -fd          # Remove any untracked files and directories
-    git reset --hard origin/$BRANCH
 
     # Check if the local branch is behind the remote branch
     if git fetch && git status | grep -q "Your branch is behind"; then
