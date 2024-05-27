@@ -15,20 +15,7 @@ else
   echo "unzip is already installed."
 fi
 
-# Check if tmux is installed
-if command_exists tmux; then
-  # Check if any tmux sessions are running
-  if tmux ls >/dev/null 2>&1; then
-    echo "tmux sessions are running. Killing all tmux sessions..."
-    tmux kill-server
-    echo "All tmux sessions killed."
-  else
-    echo "No tmux sessions are running."
-  fi
-else
-  echo "tmux is not installed."
-fi
-
+service ceremonyclient stop
 
 # Define the file path and the download URL
 REPAIR_FILE="/root/REPAIR"
@@ -77,4 +64,4 @@ rm -rf /root/ceremonyclient/node/.config/store/*
 cp -r /root/store/* /root/ceremonyclient/node/.config/store/
 cp /root/REPAIR /root/ceremonyclient/node/.config/REPAIR
 
-tmux new-session -d -s quil 'export PATH=$PATH:/usr/local/go/bin && cd /root/ceremonyclient/node && /root/scripts/qnode_restart.sh'
+service ceremonyclient start
