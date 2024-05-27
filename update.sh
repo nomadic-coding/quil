@@ -16,12 +16,11 @@ BRANCH="release"
 check_for_updates() {
     cd $REPO_PATH
     
-    # Ensure we are on the release branch
-    current_branch=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$current_branch" != "$BRANCH" ]; then
-        echo "Switching to the $BRANCH branch"
-        git checkout $BRANCH
-    fi
+    # Ensure we are on the release branch and discard any local changes
+    echo "Switching to the $BRANCH branch and discarding local changes"
+    git fetch
+    git reset --hard origin/$BRANCH
+    git checkout --force $BRANCH
 
     # Fetch updates from the remote repository
     git fetch
@@ -53,7 +52,7 @@ check_for_updates() {
             systemctl restart $SERVICE_NAME
         else
             echo "Error: No valid binary found in the repository. The service will not be restarted."
-        fi
+        }
     else
         echo "No updates found. The repository is up to date."
     fi
