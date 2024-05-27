@@ -59,9 +59,6 @@ check_for_updates() {
     fi
 }
 
-# Endless loop to check for updates every hour
-while true; do
-    check_for_updates
-    echo "Check complete. Will check again in one hour."
-    sleep 3600  # Wait for 1 hour before checking again
-done
+# Perform the update check
+check_for_updates
+echo "Check complete."
