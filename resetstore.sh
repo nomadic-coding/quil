@@ -16,6 +16,7 @@ else
 fi
 
 rm -rf /root/store*
+echo "stopping ceremonyclient service"
 service ceremonyclient stop
 
 # Define the file path and the download URL
