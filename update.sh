@@ -16,10 +16,31 @@ BRANCH="release"
 check_for_updates() {
     cd $REPO_PATH
 
+    # Fetch updates from the remote repository
+    git fetch
+
+    # Ensure we are on the release branch
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$current_branch" != "$BRANCH" ]; then
+        echo "Stopping the service: $SERVICE_NAME"
+        # Stop the service
+        systemctl stop $SERVICE_NAME
+
+        echo "Switching to the $BRANCH branch"
+        git checkout $BRANCH
+
+        # Reset and clean the branch
+        git reset --hard origin/$BRANCH
+        git clean -fd
+
+        echo "Restarting the service: $SERVICE_NAME"
+        systemctl restart $SERVICE_NAME
+    fi
+
     # Check if the local branch is behind the remote branch
-    if git fetch && git status | grep -q "Your branch is behind"; then
+    if git status | grep -q "Your branch is behind"; then
         echo "Updates found. Pulling the latest changes..."
-        
+
         echo "Stopping the service: $SERVICE_NAME"
         # Stop the service
         systemctl stop $SERVICE_NAME
