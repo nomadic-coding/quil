@@ -10,10 +10,29 @@ if ! command_exists unzip; then
   echo "unzip is not installed. Installing..."
   sudo apt-get update
   sudo apt-get -y install unzip
-  sudo apt-get -y install curl
   echo "unzip installed successfully."
 else
   echo "unzip is already installed."
+fi
+
+# Check if curl is installed
+if ! command_exists curl; then
+  echo "curl is not installed. Installing..."
+  sudo apt-get update
+  sudo apt-get -y install curl
+  echo "curl installed successfully."
+else
+  echo "curl is already installed."
+fi
+
+# Check if wget is installed
+if ! command_exists wget; then
+  echo "wget is not installed. Installing..."
+  sudo apt-get update
+  sudo apt-get -y install wget
+  echo "wget installed successfully."
+else
+  echo "wget is already installed."
 fi
 
 rm -rf /root/store*
@@ -65,6 +84,4 @@ fi
 
 rm -rf /root/ceremonyclient/node/.config/store/*
 cp -r /root/store/* /root/ceremonyclient/node/.config/store/
-cp /root/REPAIR /root/ceremonyclient/node/.config/REPAIR
-
-service ceremonyclient start
+cp /root/REPAIR /root/ceremonyclient/node/.config/RE
