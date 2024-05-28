@@ -13,69 +13,64 @@ SERVICE_CONFIG_PATH="/lib/systemd/system/ceremonyclient.service"
 BRANCH="release"
 
 # Function to check for updates and handle the service accordingly
-check_for_updates() {
-    cd $REPO_PATH
+cd $REPO_PATH
 
-    # Fetch updates from the remote repository
-    git fetch
+# Fetch updates from the remote repository
+git fetch
 
-    # Ensure we are on the release branch
-    current_branch=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$current_branch" != "$BRANCH" ]; then
-        echo "Stopping the service: $SERVICE_NAME"
-        # Stop the service
-        systemctl stop $SERVICE_NAME
+# Ensure we are on the release branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$current_branch" != "$BRANCH" ]; then
+    echo "Stopping the service: $SERVICE_NAME"
+    # Stop the service
+    systemctl stop $SERVICE_NAME
 
-        echo "Switching to the $BRANCH branch"
-        git checkout $BRANCH
+    echo "Switching to the $BRANCH branch"
+    git checkout $BRANCH
 
-        # Reset and clean the branch
-        git reset --hard origin/$BRANCH
-        git clean -fd
+    # Reset and clean the branch
+    git reset --hard origin/$BRANCH
+    git clean -fd
 
+    echo "Restarting the service: $SERVICE_NAME"
+    systemctl restart $SERVICE_NAME
+fi
+
+# Check if the local branch is behind the remote branch
+if git status | grep -q "Your branch is behind"; then
+    echo "Updates found. Pulling the latest changes..."
+
+    echo "Stopping the service: $SERVICE_NAME"
+    # Stop the service
+    systemctl stop $SERVICE_NAME
+    
+    # Discard any local changes
+    git restore --staged .
+    git restore .
+    git clean -fd
+    git reset --hard origin/$BRANCH
+    
+    # Pull the latest updates
+    git pull
+    
+    # Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
+    LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
+    
+    if [[ -x "$LATEST_BINARY" ]]; then
+        echo "Updating service configuration with the latest binary: $LATEST_BINARY"
+        
+        # Update the service configuration file with the new binary path
+        sed -i "s|ExecStart=.*|ExecStart=$LATEST_BINARY|" $SERVICE_CONFIG_PATH
+        
+        echo "Reloading systemd manager configuration..."
+        systemctl daemon-reload
+        
         echo "Restarting the service: $SERVICE_NAME"
         systemctl restart $SERVICE_NAME
-    fi
-
-    # Check if the local branch is behind the remote branch
-    if git status | grep -q "Your branch is behind"; then
-        echo "Updates found. Pulling the latest changes..."
-
-        echo "Stopping the service: $SERVICE_NAME"
-        # Stop the service
-        systemctl stop $SERVICE_NAME
-        
-        # Discard any local changes
-        git restore --staged .
-        git restore .
-        git clean -fd
-        git reset --hard origin/$BRANCH
-        
-        # Pull the latest updates
-        git pull
-        
-        # Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
-        LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
-        
-        if [[ -x "$LATEST_BINARY" ]]; then
-            echo "Updating service configuration with the latest binary: $LATEST_BINARY"
-            
-            # Update the service configuration file with the new binary path
-            sed -i "s|ExecStart=.*|ExecStart=$LATEST_BINARY|" $SERVICE_CONFIG_PATH
-            
-            echo "Reloading systemd manager configuration..."
-            systemctl daemon-reload
-            
-            echo "Restarting the service: $SERVICE_NAME"
-            systemctl restart $SERVICE_NAME
-        else
-            echo "Error: No valid binary found in the repository. The service will not be restarted."
-        fi
     else
-        echo "No updates found. The repository is up to date."
+        echo "Error: No valid binary found in the repository. The service will not be restarted."
     fi
-}
-
-# Perform the update check
-check_for_updates
+else
+    echo "No updates found. The repository is up to date."
+fi
 echo "Check complete."
