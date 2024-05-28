@@ -10,6 +10,7 @@ if ! command_exists unzip; then
   echo "unzip is not installed. Installing..."
   sudo apt-get update
   sudo apt-get -y install unzip
+  sudo apt-get -y install curl
   echo "unzip installed successfully."
 else
   echo "unzip is already installed."
