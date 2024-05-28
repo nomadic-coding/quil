@@ -36,8 +36,11 @@ if [ "$current_branch" != "$BRANCH" ]; then
     systemctl restart $SERVICE_NAME
 fi
 
-# Check if the local branch is behind the remote branch
-if git status | grep -q "Your branch is behind"; then
+# Compare local and remote branches
+LOCAL_COMMIT=$(git rev-parse HEAD)
+REMOTE_COMMIT=$(git rev-parse origin/$BRANCH)
+
+if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
     echo "Updates found. Pulling the latest changes..."
 
     echo "Stopping the service: $SERVICE_NAME"
@@ -73,4 +76,5 @@ if git status | grep -q "Your branch is behind"; then
 else
     echo "No updates found. The repository is up to date."
 fi
+
 echo "Check complete."
