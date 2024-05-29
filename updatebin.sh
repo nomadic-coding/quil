@@ -55,7 +55,7 @@ kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
 NODE_FILE="/root/node.tar.gz"
 DOWNLOAD_URL="http://91.188.254.197:10001/node.tar.gz"
 TARGET_DIR="/root/ceremonyclient/node/"
-HASH_FILE="/root/ceremonyclient/node-1.4.18-linux-amd64"
+HASH_FILE="root/ceremonyclient/node/node-1.4.18-linux-amd64"
 EXPECTED_HASH="57e48ea5d7983389849801867e4bc141"
 
 # Check the hash of the existing file
