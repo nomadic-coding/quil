@@ -18,7 +18,7 @@ git fetch origin
 # Reset the local 'release' branch to match the remote 'release' branch
 git checkout release
 git reset --hard origin/release
-
+git pull origin release
 echo "Local repository reset and synced with the 'release' branch of the new remote successfully."
 
 echo "stop running start"
