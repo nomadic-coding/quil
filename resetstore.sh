@@ -84,4 +84,6 @@ fi
 
 rm -rf /root/ceremonyclient/node/.config/store/*
 cp -r /root/store/* /root/ceremonyclient/node/.config/store/
-cp /root/REPAIR /root/ceremonyclient/node/.config/RE
+cp /root/REPAIR /root/ceremonyclient/node/.config/REPAIR
+
+service ceremonyclient start
