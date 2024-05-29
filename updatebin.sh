@@ -35,6 +35,19 @@ else
   echo "wget is already installed."
 fi
 
+# Function to check the hash of a file
+check_hash() {
+  local file=$1
+  local expected_hash=$2
+  local actual_hash=$(md5sum "$file" | awk '{ print $1 }')
+
+  if [ "$actual_hash" == "$expected_hash" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 echo "stop running service"
 kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
 
@@ -42,26 +55,34 @@ kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
 NODE_FILE="/root/node.tar.gz"
 DOWNLOAD_URL="http://91.188.254.197:10001/node.tar.gz"
 TARGET_DIR="/root/ceremonyclient/node/"
+HASH_FILE="/root/ceremonyclient/node-1.4.18-linux-amd64"
+EXPECTED_HASH="57e48ea5d7983389849801867e4bc141"
 
-# Check if the file exists
-if [ ! -f "$NODE_FILE" ]; then
-  echo "node.tar.gz file does not exist. Downloading..."
-  curl -L -o "$NODE_FILE" "$DOWNLOAD_URL"
-  echo "Download completed: $NODE_FILE"
+# Check the hash of the existing file
+if [ -f "$HASH_FILE" ] && check_hash "$HASH_FILE" "$EXPECTED_HASH"; then
+  echo "File $HASH_FILE already has the correct hash."
 else
-  echo "node.tar.gz file already exists: $NODE_FILE"
+  echo "File $HASH_FILE does not have the correct hash or does not exist. Downloading new file..."
+
+  # Check if the node.tar.gz file exists
+  if [ ! -f "$NODE_FILE" ]; then
+    echo "node.tar.gz file does not exist. Downloading..."
+    curl -L -o "$NODE_FILE" "$DOWNLOAD_URL"
+    echo "Download completed: $NODE_FILE"
+  else
+    echo "node.tar.gz file already exists: $NODE_FILE"
+  fi
+
+  # Extract the tar.gz file
+  echo "Extracting $NODE_FILE..."
+  tar -xzvf "$NODE_FILE" -C /root/
+  echo "Extraction completed."
+
+  # Move the extracted files to the target directory
+  echo "Moving files to $TARGET_DIR..."
+  mv node-1.4.18-linux-amd64* "$TARGET_DIR"
+  echo "Files moved to $TARGET_DIR."
 fi
 
-# Extract the tar.gz file
-echo "Extracting $NODE_FILE..."
-tar -xzvf "$NODE_FILE" -C /root/
-echo "Extraction completed."
-
-# Move the extracted files to the target directory
-echo "Moving files to $TARGET_DIR..."
-mv node-1.4.18-linux-amd64* $TARGET_DIR
-echo "Files moved to $TARGET_DIR."
-
 service ceremonyclient start
-
 echo "starting service"
