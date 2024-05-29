@@ -48,21 +48,21 @@ check_hash() {
   fi
 }
 
-echo "stop running service"
-kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
-
 # Define the node.tar.gz file path and the download URL
 NODE_FILE="/root/node.tar.gz"
 DOWNLOAD_URL="http://91.188.254.197:10001/node.tar.gz"
 TARGET_DIR="/root/ceremonyclient/node/"
-HASH_FILE="root/ceremonyclient/node/node-1.4.18-linux-amd64"
+HASH_FILE="/root/ceremonyclient/node/node-1.4.18-linux-amd64"
 EXPECTED_HASH="57e48ea5d7983389849801867e4bc141"
 
 # Check the hash of the existing file
 if [ -f "$HASH_FILE" ] && check_hash "$HASH_FILE" "$EXPECTED_HASH"; then
-  echo "File $HASH_FILE already has the correct hash."
+  echo "File $HASH_FILE already has the correct hash. No need to download or restart the service."
 else
-  echo "File $HASH_FILE does not have the correct hash or does not exist. Downloading new file..."
+  echo "File $HASH_FILE does not have the correct hash or does not exist. Proceeding with download and extraction..."
+
+  echo "stop running service"
+  kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
 
   # Check if the node.tar.gz file exists
   if [ ! -f "$NODE_FILE" ]; then
@@ -80,9 +80,9 @@ else
 
   # Move the extracted files to the target directory
   echo "Moving files to $TARGET_DIR..."
-  mv node-1.4.18-linux-amd64* "$TARGET_DIR"
+  mv /root/node-1.4.18-linux-amd64* "$TARGET_DIR"
   echo "Files moved to $TARGET_DIR."
-fi
 
-service ceremonyclient start
-echo "starting service"
+  service ceremonyclient start
+  echo "starting service"
+fi
