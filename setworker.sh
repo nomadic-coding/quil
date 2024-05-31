@@ -16,8 +16,9 @@ required_ram=$((max_cores * required_ram_per_core))
 if (( ram >= required_ram )); then
   gomaxprocs=$max_cores
 else
-  # Calculate the maximum GOMAXPROCS based on available RAM
+  # Calculate the maximum GOMAXPROCS based on available RAM, ensuring it does not exceed max_cores
   gomaxprocs=$((ram / required_ram_per_core))
+  gomaxprocs=$((gomaxprocs > max_cores ? max_cores : gomaxprocs))
 fi
 
 # Ensure GOMAXPROCS is at least 1
