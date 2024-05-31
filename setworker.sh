@@ -53,3 +53,5 @@ sudo systemctl daemon-reload
 
 # Restart the service
 sudo systemctl restart ceremonyclient.service
+
+
