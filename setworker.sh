@@ -25,9 +25,8 @@ fi
 # Ensure GOMAXPROCS is at least 1
 gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
 
-# Calculate CPUQuota
-cpu_quota=$((gomaxprocs * 100))
-cpu_quota=$(awk "BEGIN {print $cpu_quota * 0.8}")
+# Calculate CPUQuota to be 50% of the total cores
+cpu_quota=$(awk "BEGIN {print $cores * 100 * 0.5}")
 
 # Print calculated values for debugging
 echo "Number of CPU cores: $cores"
@@ -53,5 +52,3 @@ sudo systemctl daemon-reload
 
 # Restart the service
 sudo systemctl restart ceremonyclient.service
-
-
