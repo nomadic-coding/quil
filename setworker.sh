@@ -27,7 +27,7 @@ gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
 
 # Calculate CPUQuota
 cpu_quota=$((gomaxprocs * 100 - 100))
-cpu_quota=$(echo "$cpu_quota * 0.7" | bc)
+cpu_quota=$(awk "BEGIN {print $cpu_quota * 0.7}")
 
 # Print calculated values for debugging
 echo "Number of CPU cores: $cores"
