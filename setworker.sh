@@ -8,10 +8,10 @@ ram_kb=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
 ram=$((ram_kb / 1024 / 1024))  # Convert from KB to GB
 
 # Calculate GOMAXPROCS
-# For example, if there are 10 cores, it should set GOMAXPROCS to 9, but only if there is at least 18GB RAM
+# For example, if there are 10 cores, it should set GOMAXPROCS to 10, but only if there is at least 20GB RAM
 # If there is less RAM, adjust GOMAXPROCS so the ratio GOMAXPROCS:RAM is 1:2
 required_ram_per_core=2
-max_cores=$((cores - 1))
+max_cores=$((cores))
 required_ram=$((max_cores * required_ram_per_core))
 
 if (( ram >= required_ram )); then
@@ -27,7 +27,7 @@ gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
 
 # Calculate CPUQuota
 cpu_quota=$((gomaxprocs * 100 - 100))
-cpu_quota=$(awk "BEGIN {print $cpu_quota * 0.7}")
+cpu_quota=$(awk "BEGIN {print $cpu_quota * 0.8}")
 
 # Print calculated values for debugging
 echo "Number of CPU cores: $cores"
