@@ -3,8 +3,9 @@
 # Get the number of CPU cores
 cores=$(nproc)
 
-# Get the total RAM in gigabytes
-ram=$(free -g | awk '/^Mem:/{print $2}')
+# Get the total RAM in gigabytes using /proc/meminfo
+ram_kb=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
+ram=$((ram_kb / 1024 / 1024))  # Convert from KB to GB
 
 # Calculate GOMAXPROCS
 # For example, if there are 10 cores, it should set GOMAXPROCS to 8, but only if there is at least 16GB RAM
@@ -40,8 +41,6 @@ fi
 
 # Reload systemd configuration
 sudo systemctl daemon-reload
-
-rm /root/ceremonyclient/node/.config/SELF_TEST
 
 # Restart the service
 sudo systemctl restart ceremonyclient.service
