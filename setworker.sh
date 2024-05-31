@@ -26,13 +26,14 @@ fi
 gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
 
 # Calculate CPUQuota
-cpu_quota=$((cores * 100 - 100))  # Set CPUQuota to cores * 100 - 100, e.g., 10 cores => 1000% - 100% = 900%
+cpu_quota=$((gomaxprocs * 100 - 100))
+cpu_quota=$(echo "$cpu_quota * 0.7" | bc)
 
 # Print calculated values for debugging
 echo "Number of CPU cores: $cores"
 echo "Total RAM in GB: $ram"
 echo "Calculated GOMAXPROCS: $gomaxprocs"
-echo "Calculated CPUQuota: $cpu_quota%"
+echo "Calculated CPUQuota: ${cpu_quota}%"
 
 # Update or add Environment=GOMAXPROCS and CPUQuota in the service file
 if grep -q "^Environment=GOMAXPROCS=" /lib/systemd/system/ceremonyclient.service; then
@@ -42,9 +43,9 @@ else
 fi
 
 if grep -q "^CPUQuota=" /lib/systemd/system/ceremonyclient.service; then
-  sudo sed -i "/^CPUQuota=/c\CPUQuota=$cpu_quota%" /lib/systemd/system/ceremonyclient.service
+  sudo sed -i "/^CPUQuota=/c\CPUQuota=${cpu_quota}%" /lib/systemd/system/ceremonyclient.service
 else
-  sudo sed -i "/\[Service\]/a CPUQuota=$cpu_quota%" /lib/systemd/system/ceremonyclient.service
+  sudo sed -i "/\[Service\]/a CPUQuota=${cpu_quota}%" /lib/systemd/system/ceremonyclient.service
 fi
 
 # Reload systemd configuration
