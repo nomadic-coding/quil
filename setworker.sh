@@ -41,5 +41,7 @@ fi
 # Reload systemd configuration
 sudo systemctl daemon-reload
 
+rm /root/ceremonyclient/node/.config/SELF_TEST
+
 # Restart the service
 sudo systemctl restart ceremonyclient.service
