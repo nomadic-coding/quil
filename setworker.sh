@@ -11,7 +11,7 @@ ram=$((ram_kb / 1024 / 1024))  # Convert from KB to GB
 # Set max_cores to 40% of the total cores or the number of potential GOMAXPROCS based on available RAM, whichever is lower
 required_ram_per_core=2
 max_cores_by_ram=$((ram / required_ram_per_core))
-max_cores_by_cores=$(awk "BEGIN {print int($cores * 0.4)}")
+max_cores_by_cores=$(awk "BEGIN {print int($cores * 0.5)}")
 max_cores=$((max_cores_by_ram < max_cores_by_cores ? max_cores_by_ram : max_cores_by_cores))
 
 # Ensure max_cores is at least 1
