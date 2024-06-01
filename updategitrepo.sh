@@ -1,54 +1,25 @@
 #!/bin/bash
 
-# Get the number of CPU cores
-cores=$(nproc)
+# Navigate to the repository directory
+cd /root/ceremonyclient/node || { echo "Directory not found"; exit 1; }
 
-# Get the total RAM in gigabytes using /proc/meminfo
-ram_kb=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
-ram=$((ram_kb / 1024 / 1024))  # Convert from KB to GB
+echo "stop running service"
+kill -9 $(pgrep node-1.4.18) && service ceremonyclient stop
 
-# Calculate GOMAXPROCS
-# For example, if there are 10 cores, it should set GOMAXPROCS to 10, but only if there is at least 20GB RAM
-# If there is less RAM, adjust GOMAXPROCS so the ratio GOMAXPROCS:RAM is 1:2
-required_ram_per_core=2
-max_cores=$((cores))
-required_ram=$((max_cores * required_ram_per_core))
+# Stash any local changes
+git reset --hard
 
-if (( ram >= required_ram )); then
-  gomaxprocs=$max_cores
-else
-  # Calculate the maximum GOMAXPROCS based on available RAM, ensuring it does not exceed max_cores
-  gomaxprocs=$((ram / required_ram_per_core))
-  gomaxprocs=$((gomaxprocs > max_cores ? max_cores : gomaxprocs))
-fi
+# Set the new origin URL
+git remote set-url origin https://source.quilibrium.com/quilibrium/ceremonyclient.git
 
-# Ensure GOMAXPROCS is at least 1
-gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
+# Fetch the branches from the new origin
+git fetch origin
 
-# Calculate CPUQuota to be 50% of the total cores
-cpu_quota=$(awk "BEGIN {print $cores * 100 * 0.5}")
+# Reset the local 'release' branch to match the remote 'release' branch
+git checkout release
+git reset --hard origin/release
+git pull origin release
+echo "Local repository reset and synced with the 'release' branch of the new remote successfully."
 
-# Print calculated values for debugging
-echo "Number of CPU cores: $cores"
-echo "Total RAM in GB: $ram"
-echo "Calculated GOMAXPROCS: $gomaxprocs"
-echo "Calculated CPUQuota: ${cpu_quota}%"
-
-# Update or add Environment=GOMAXPROCS and CPUQuota in the service file
-if grep -q "^Environment=GOMAXPROCS=" /lib/systemd/system/ceremonyclient.service; then
-  sudo sed -i "/^Environment=GOMAXPROCS=/c\Environment=GOMAXPROCS=$gomaxprocs" /lib/systemd/system/ceremonyclient.service
-else
-  sudo sed -i "/\[Service\]/a Environment=GOMAXPROCS=$gomaxprocs" /lib/systemd/system/ceremonyclient.service
-fi
-
-if grep -q "^CPUQuota=" /lib/systemd/system/ceremonyclient.service; then
-  sudo sed -i "/^CPUQuota=/c\CPUQuota=${cpu_quota}%" /lib/systemd/system/ceremonyclient.service
-else
-  sudo sed -i "/\[Service\]/a CPUQuota=${cpu_quota}%" /lib/systemd/system/ceremonyclient.service
-fi
-
-# Reload systemd configuration
-sudo systemctl daemon-reload
-
-# Restart the service
-sudo systemctl restart cer
+echo "stop running start"
+service ceremonyclient start
