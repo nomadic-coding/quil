@@ -7,7 +7,7 @@ sed -i '/^\[Install\]/,/^\[/{/Environment=GOMAXPROCS=2/d;}' /lib/systemd/system/
 cores=$(nproc)
 
 # Calculate GOMAXPROCS as 40% of the total cores
-gomaxprocs=$(awk "BEGIN {print int($cores * 0.4)}")
+gomaxprocs=$(awk "BEGIN {print int($cores * 0.25)}")
 
 # Ensure GOMAXPROCS is at least 1
 gomaxprocs=$((gomaxprocs > 0 ? gomaxprocs : 1))
