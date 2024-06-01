@@ -21,12 +21,50 @@ service_file="/lib/systemd/system/ceremonyclient.service"
 # Backup the original service file
 cp "$service_file" "$service_file.bak"
 
-# Update the GOMAXPROCS value in the service file or add it if it doesn't exist
-if grep -q "^Environment=GOMAXPROCS=" "$service_file"; then
-  sed -i "s/^Environment=GOMAXPROCS=.*$/Environment=GOMAXPROCS=$gomaxprocs/" "$service_file"
-else
-  echo "Environment=GOMAXPROCS=$gomaxprocs" >> "$service_file"
-fi
+# Function to ensure GOMAXPROCS is only in the [Service] section
+move_gomaxprocs_to_service() {
+  local file=$1
+  local gomaxprocs_line="Environment=GOMAXPROCS=$gomaxprocs"
+  local in_service_section=false
+  local in_install_section=false
+  local new_content=""
+  local gomaxprocs_added=false
+
+  while IFS= read -r line; do
+    if [[ $line =~ ^\[(.*)\]$ ]]; then
+      current_section="${BASH_REMATCH[1]}"
+    fi
+
+    if [[ $current_section == "Service" ]]; then
+      in_service_section=true
+      in_install_section=false
+    elif [[ $current_section == "Install" ]]; then
+      in_install_section=true
+      in_service_section=false
+    else
+      in_service_section=false
+      in_install_section=false
+    fi
+
+    # Remove any existing GOMAXPROCS line
+    if [[ $line == Environment=GOMAXPROCS=* ]]; then
+      continue
+    fi
+
+    new_content+="$line"$'\n'
+
+    # If we are in the Service section, add the GOMAXPROCS line once
+    if $in_service_section && ! $gomaxprocs_added; then
+      new_content+="$gomaxprocs_line"$'\n'
+      gomaxprocs_added=true
+    fi
+  done < "$file"
+
+  echo "$new_content" > "$file"
+}
+
+# Call the function to update the service file
+move_gomaxprocs_to_service "$service_file"
 
 # Remove CPUQuota= line if it exists
 sed -i "/^CPUQuota=/d" "$service_file"
