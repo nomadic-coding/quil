@@ -25,6 +25,5 @@ for peer in "${bootstrap_peers[@]}"; do
     fi
 done
 
-# Calculate the fraction of peers found
-total_peers=${#bootstrap_peers[@]}
+# Output the count of peers found
 echo "$count"
