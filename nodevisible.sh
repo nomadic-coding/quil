@@ -1,7 +1,5 @@
 #!/bin/bash
 
-sleep 1
-
 # Bootstrap peer list
 bootstrap_peers=(
 "EiDpYbDwT2rZq70JNJposqAC+vVZ1t97pcHbK8kr5G4ZNA=="
