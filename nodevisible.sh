@@ -17,14 +17,14 @@ bootstrap_peers=(
 # Run the grpcurl command and capture its output
 output=$(/root/go/bin/grpcurl -plaintext localhost:8337 quilibrium.node.node.pb.NodeService.GetNetworkInfo)
 
-# Check if any of the specific peers are in the output
-visible=false
+# Count the number of peers found in the output
+count=0
 for peer in "${bootstrap_peers[@]}"; do
     if [[ $output == *"$peer"* ]]; then
-        visible=true
-        echo "You see $peer as a bootstrap peer"
-    else
-        echo "Peer $peer not found"
+        count=$((count + 1))
     fi
 done
-echo $visible
+
+# Calculate the fraction of peers found
+total_peers=${#bootstrap_peers[@]}
+echo "$count"
