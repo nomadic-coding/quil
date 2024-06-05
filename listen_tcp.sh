@@ -13,3 +13,4 @@ ufw allow 8336/tcp
 
 echo "restarting service"
 service ceremonyclient restart
+echo "done"
