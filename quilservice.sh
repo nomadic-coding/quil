@@ -49,10 +49,3 @@ sudo systemctl start ceremonyclient
 
 # Final messages
 echo "Now your node is running as a service!"
-echo ""
-echo "Now I will show below the node log..."
-echo "To exit the log just type CTRL + C"
-
-# See the logs of the ceremonyclient service
-sleep 5  # Add a 5-second delay
-sudo journalctl -u ceremonyclient.service -f --no-hostname -o cat
