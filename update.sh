@@ -12,8 +12,19 @@ SERVICE_CONFIG_PATH="/lib/systemd/system/ceremonyclient.service"
 # The branch to check for updates
 BRANCH="release"
 
+# The correct remote URL
+CORRECT_REMOTE_URL="https://source.quilibrium.com/quilibrium/ceremonyclient.git"
+
 # Function to check for updates and handle the service accordingly
 cd $REPO_PATH
+
+# Check if the remote URL is correct
+current_remote_url=$(git config --get remote.origin.url)
+if [ "$current_remote_url" != "$CORRECT_REMOTE_URL" ]; then
+    echo "Incorrect remote URL. Setting the correct remote URL..."
+    git remote remove origin
+    git remote add origin $CORRECT_REMOTE_URL
+fi
 
 # Fetch updates from the remote repository
 git fetch
