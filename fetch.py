@@ -156,7 +156,7 @@ if "node_info_peer_id" in initial_config:
     peer_id = initial_config["node_info_peer_id"]
     peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/node-1.4.18-linux-amd64 -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
     peer_test_key = "peer_test"
-    commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {}, "update_dict": True})
+    commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {}, "update_dict": False})
 
 # Execute all commands with the peer test command included
 get_config(commands)
