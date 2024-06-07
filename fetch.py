@@ -107,8 +107,6 @@ for cmd in commands:
     
     if update_dict and isinstance(parsed_result, dict):
         initial_config.update(parsed_result)
-    elif isinstance(parsed_result, dict) and not update_dict:
-        initial_config[key] = list(parsed_result.values())[0]
     else:
         initial_config[key] = parsed_result
 
