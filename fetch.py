@@ -105,8 +105,6 @@ def get_config(commands):
         
         if update_dict and isinstance(parsed_result, dict):
             config.update(parsed_result)
-        elif isinstance(parsed_result, dict) and not update_dict:
-            config[key] = list(parsed_result.values())[0]
         else:
             config[key] = parsed_result
 
