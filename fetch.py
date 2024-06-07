@@ -117,12 +117,12 @@ def get_config(commands):
 # Initial list of commands to execute with specified keys, optional parser functions, data types, and update_dict flag
 commands = [
     {"command": "grep -E 'listen(Multiaddr|GrpcMultiaddr)' /root/ceremonyclient/node/.config/config.yml", "key": "listen_addresses", "parser": parse_grep_listen_addresses, "update_dict": True},
-    {"command": "nproc", "key": "cpu_count", "parser": lambda x, y: int(x)},
+    {"command": "nproc", "key": "cpu_count", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "uptime", "key": "system_uptime", "parser": parse_system_uptime, "update_dict": True},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --abbrev-ref --short HEAD", "key": "git_branch"},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --short HEAD", "key": "git_commit_hash"},
     {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/node-1.4.18-linux-amd64 -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
-    {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x)},
+    {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node"), "key": "bin_checksum"}
@@ -144,8 +144,6 @@ for cmd in commands:
     
     if update_dict and isinstance(parsed_result, dict):
         initial_config.update(parsed_result)
-    elif isinstance(parsed_result, dict) and not update_dict:
-        initial_config[key] = list(parsed_result.values())[0]
     else:
         initial_config[key] = parsed_result
 
