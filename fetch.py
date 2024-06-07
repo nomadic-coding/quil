@@ -53,7 +53,7 @@ def parse_system_uptime(output, data_type=None):
 def parse_disk_usage(output, data_type=None):
     """Parse the disk usage to get the usage percentage of the main partition."""
     usage_match = re.search(r'(\d+)%', output)
-    return {"disk_usage": int(usage_match.group(1))} if usage_match else {"disk_usage": 0}
+    return int(usage_match.group(1)) or 0
 
 def get_config(commands):
     """Execute a list of commands and return their results as a JSON object."""
