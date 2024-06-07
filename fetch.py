@@ -124,7 +124,7 @@ commands = [
     {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/node-1.4.18-linux-amd64 -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x)},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
-    {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage},
+    {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node"), "key": "bin_checksum"}
 ]
 
@@ -154,7 +154,7 @@ if "node_info_peer_id" in initial_config:
     peer_id = initial_config["node_info_peer_id"]
     peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/node-1.4.18-linux-amd64 -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
     peer_test_key = "peer_test"
-    commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {}, "update_dict": False})
+    commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {}})
 
 # Execute all commands with the peer test command included
 get_config(commands)
