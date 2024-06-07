@@ -53,7 +53,7 @@ def parse_system_uptime(output, data_type=None):
 def parse_disk_usage(output, data_type=None):
     """Parse the disk usage to get the usage percentage of the main partition."""
     usage_match = re.search(r'(\d+)%', output)
-    return int(usage_match.group(1)) or 0
+    return {"disk_usage": int(usage_match.group(1))} if usage_match else {"disk_usage": 0}
 
 def get_config(commands):
     """Execute a list of commands and return their results as a JSON object."""
@@ -70,6 +70,8 @@ def get_config(commands):
         
         if update_dict and isinstance(parsed_result, dict):
             config.update(parsed_result)
+        elif isinstance(parsed_result, dict) and not update_dict:
+            config[key] = list(parsed_result.values())[0]
         else:
             config[key] = parsed_result
 
@@ -89,7 +91,7 @@ commands = [
     {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/node-1.4.18-linux-amd64 -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x)},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
-    {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": False}
+    {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage}
 ]
 
 # Execute initial commands to get initial config
@@ -105,6 +107,8 @@ for cmd in commands:
     
     if update_dict and isinstance(parsed_result, dict):
         initial_config.update(parsed_result)
+    elif isinstance(parsed_result, dict) and not update_dict:
+        initial_config[key] = list(parsed_result.values())[0]
     else:
         initial_config[key] = parsed_result
 
