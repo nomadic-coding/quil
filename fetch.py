@@ -36,7 +36,10 @@ def parse_node_info(output, data_type=None):
 
 def parse_json_output(output, data_type=None):
     """Parse the JSON output from the recalibrating difficulty metric command."""
-    return output and json.loads(output) or {}
+    try:
+        return output and json.loads(output) or {}
+    except json.JSONDecodeError:
+        return {}
 
 def parse_system_uptime(output, data_type=None):
     """Parse the system uptime to get hours and load average."""
