@@ -63,11 +63,11 @@ def parse_disk_usage(output, data_type=None):
 def verify_sha3_256_checksum(directory):
     """Verify the SHA3-256 checksum of the binary file in the specified directory."""
     # Find the binary file matching the pattern
-    files = [f for f in os.listdir(directory) if f.endswith('-linux-amd64')]
+    files = sorted([f for f in os.listdir(directory) if f.endswith('-linux-amd64')])
     if not files:
         return "No binary files found."
     
-    file_path = os.path.join(directory, files[0])
+    file_path = os.path.join(directory, files[-1])
     digest_file_path = file_path + '.dgst'
 
     # Extract the expected hash from the digest file
@@ -124,12 +124,27 @@ commands = [
     {"command": "uptime", "key": "system_uptime", "parser": parse_system_uptime, "update_dict": True},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --abbrev-ref --short HEAD", "key": "git_branch"},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --short HEAD", "key": "git_commit_hash"},
-    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/node-1.4.18-linux-amd64 -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
+    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node"), "key": "bin_checksum"},
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
-    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node"), "key": "bin_checksum"}
 ]
+
+# Find the latest version dynamically
+def get_latest_binary_command(command_template):
+    files = sorted([f for f in os.listdir("/root/ceremonyclient/node/") if f.endswith('-linux-amd64')])
+    if files:
+        latest_binary = files[-1]
+        return command_template.format(binary=latest_binary)
+    else:
+        return None
+
+# Command to get node info using the latest binary version
+node_info_command_template = "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/{binary} -node-info"
+latest_node_info_command = get_latest_binary_command(node_info_command_template)
+
+if latest_node_info_command:
+    commands.append({"command": latest_node_info_command, "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True})
 
 # Execute initial commands to get initial config
 initial_config = {}
@@ -153,7 +168,7 @@ for cmd in commands:
 # If node_info_peer_id is available, add the peer test command
 if "node_info_peer_id" in initial_config:
     peer_id = initial_config["node_info_peer_id"]
-    peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/node-1.4.18-linux-amd64 -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
+    peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/{files[-1]} -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
     peer_test_key = "peer_test"
     commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {} ,"update_dict": False})
 
