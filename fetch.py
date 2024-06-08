@@ -135,13 +135,13 @@ def get_latest_binary_command(command_template):
     files = sorted([f for f in os.listdir("/root/ceremonyclient/node/") if f.endswith('-linux-amd64')])
     if files:
         latest_binary = files[-1]
-        return command_template.format(binary=latest_binary)
+        return command_template.format(binary=latest_binary), latest_binary
     else:
-        return None
+        return None, None
 
 # Command to get node info using the latest binary version
 node_info_command_template = "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/{binary} -node-info"
-latest_node_info_command = get_latest_binary_command(node_info_command_template)
+latest_node_info_command, latest_binary = get_latest_binary_command(node_info_command_template)
 
 if latest_node_info_command:
     commands.append({"command": latest_node_info_command, "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True})
@@ -166,9 +166,9 @@ for cmd in commands:
         initial_config[key] = parsed_result
 
 # If node_info_peer_id is available, add the peer test command
-if "node_info_peer_id" in initial_config:
+if "node_info_peer_id" in initial_config and latest_binary:
     peer_id = initial_config["node_info_peer_id"]
-    peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/{files[-1]} -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
+    peer_test_command = f'cd /root/ceremonyclient/node/ && peer_id=$(/root/ceremonyclient/node/{latest_binary} -peer-id | grep -oP "(?<=Peer ID: ).*") && response=$(curl -s "https://dashboard-api.quilibrium.com/peer-test?peerId=$peer_id") && echo "$response"'
     peer_test_key = "peer_test"
     commands.append({"command": peer_test_command, "key": peer_test_key, "parser": lambda x, y: x and json.loads(x) or {} ,"update_dict": False})
 
