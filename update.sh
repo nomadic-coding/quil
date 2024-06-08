@@ -66,10 +66,15 @@ if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
     
     # Pull the latest updates
     git pull
-    
-    # Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
-    LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
-    
+fi
+
+# Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
+LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
+
+# Extract the current ExecStart binary path from the service configuration file
+CURRENT_BINARY=$(grep "^ExecStart=" $SERVICE_CONFIG_PATH | cut -d'=' -f2)
+
+if [ "$LATEST_BINARY" != "$CURRENT_BINARY" ]; then
     if [[ -x "$LATEST_BINARY" ]]; then
         echo "Updating service configuration with the latest binary: $LATEST_BINARY"
         
