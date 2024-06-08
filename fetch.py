@@ -94,10 +94,12 @@ def parse_proof_details(output, data_type=None):
     """Parse the log entry for the increment and time_taken."""
     increment_match = re.search(r'"increment":(\d+)', output)
     time_taken_match = re.search(r'"time_taken":([\d.]+)', output)
+    ts_proof_match = re.search(r'"ts":([\d.]+)', output)
     
     return {
         "proof_increment": int(increment_match.group(1)) if increment_match else 0,
-        "proof_time": float(time_taken_match.group(1)) if time_taken_match else 0.0
+        "proof_time": float(time_taken_match.group(1)) if time_taken_match else 0.0,
+        "ts_proof": float(ts_proof_match.group(1)) if ts_proof_match else 0.0
     }
 
 def get_config(commands):
