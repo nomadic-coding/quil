@@ -90,6 +90,16 @@ def verify_sha3_256_checksum(directory):
     else:
         return "sha3-256 failed"
 
+def parse_proof_details(output, data_type=None):
+    """Parse the log entry for the increment and time_taken."""
+    increment_match = re.search(r'"increment":(\d+)', output)
+    time_taken_match = re.search(r'"time_taken":([\d.]+)', output)
+    
+    return {
+        "proof_increment": int(increment_match.group(1)) if increment_match else 0,
+        "proof_time": float(time_taken_match.group(1)) if time_taken_match else 0.0
+    }
+
 def get_config(commands):
     """Execute a list of commands and return their results as a JSON object."""
     config = {}
@@ -128,6 +138,7 @@ commands = [
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
+    {"command": "grep -a '\"completed duration proof\"' /var/log/syslog | tail -n 1", "key": "proof_details", "parser": parse_proof_details, "update_dict": True},
 ]
 
 # Find the latest version dynamically
