@@ -10,7 +10,7 @@ SERVICE_NAME="ceremonyclient"
 SERVICE_CONFIG_PATH="/lib/systemd/system/ceremonyclient.service"
 
 # The branch to check for updates
-BRANCH="release"
+BRANCH="release-cdn"
 
 # The correct remote URL
 CORRECT_REMOTE_URL="https://source.quilibrium.com/quilibrium/ceremonyclient.git"
