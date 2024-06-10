@@ -32,7 +32,7 @@ Restart=always
 RestartSec=5s
 WorkingDirectory=/root/ceremonyclient/node
 Environment=GOEXPERIMENT=arenas
-ExecStart=/root/ceremonyclient/node/node-1.4.18-linux-amd64
+ExecStart=/root/ceremonyclient/node/node-1.4.19-linux-amd64
 
 [Install]
 WantedBy=multi-user.target
