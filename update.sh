@@ -21,10 +21,10 @@ fetch() {
 
     for file in $files; do
         version=$(echo "$file" | cut -d '-' -f 2)
-        if ! test -f "./$file"; then
+        if ! test -f "$REPO_PATH/$file"; then
             echo "Downloading new release: $file"
-            curl -s "https://releases.quilibrium.com/$file" -o "$file"
-            chmod +x "$file"
+            curl -s "https://releases.quilibrium.com/$file" -o "$REPO_PATH/$file"
+            chmod +x "$REPO_PATH/$file"
             new_release=true
         fi
     done
@@ -42,7 +42,7 @@ CURRENT_BINARY=$(grep "^ExecStart=" $SERVICE_CONFIG_PATH | cut -d'=' -f2)
 # Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
 LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
 
-if [ "$new_release" = "true" ] || [ "$LATEST_BINARY" != "$CURRENT_BINARY" ]; then
+if [ "$new_release" = "true" ] || [ ! -f "$CURRENT_BINARY" ] || [ "$LATEST_BINARY" != "$CURRENT_BINARY" ]; then
     if [[ -x "$LATEST_BINARY" ]]; then
         echo "Updating service configuration with the latest binary: $LATEST_BINARY"
         
