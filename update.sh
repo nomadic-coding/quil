@@ -9,72 +9,40 @@ SERVICE_NAME="ceremonyclient"
 # Path to the service configuration file
 SERVICE_CONFIG_PATH="/lib/systemd/system/ceremonyclient.service"
 
-# The branch to check for updates
-BRANCH="release-cdn"
+# The correct remote URL for the binary
+BINARY_URL="https://releases.quilibrium.com/release"
 
-# The correct remote URL
-CORRECT_REMOTE_URL="https://source.quilibrium.com/quilibrium/ceremonyclient.git"
+# Fetch the binary from the specified URL
+fetch() {
+    release_os="linux"
+    release_arch="amd64"
+    files=$(curl -s $BINARY_URL | grep $release_os-$release_arch)
+    new_release=false
 
-# Function to check for updates and handle the service accordingly
+    for file in $files; do
+        version=$(echo "$file" | cut -d '-' -f 2)
+        if ! test -f "./$file"; then
+            echo "Downloading new release: $file"
+            curl -s "https://releases.quilibrium.com/$file" -o "$file"
+            chmod +x "$file"
+            new_release=true
+        fi
+    done
+    echo $new_release
+}
+
 cd $REPO_PATH
 
-# Check if the remote URL is correct
-current_remote_url=$(git config --get remote.origin.url)
-if [ "$current_remote_url" != "$CORRECT_REMOTE_URL" ]; then
-    echo "Incorrect remote URL. Setting the correct remote URL..."
-    git remote remove origin
-    git remote add origin $CORRECT_REMOTE_URL
-fi
-
-# Fetch updates from the remote repository
-git fetch
-
-# Ensure we are on the release branch
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-if [ "$current_branch" != "$BRANCH" ]; then
-    echo "Stopping the service: $SERVICE_NAME"
-    # Stop the service
-    systemctl stop $SERVICE_NAME
-
-    echo "Switching to the $BRANCH branch"
-    git checkout $BRANCH
-
-    # Reset and clean the branch
-    git reset --hard origin/$BRANCH
-    git clean -fd
-
-    echo "Restarting the service: $SERVICE_NAME"
-    systemctl restart $SERVICE_NAME
-fi
-
-# Compare local and remote branches
-LOCAL_COMMIT=$(git rev-parse HEAD)
-REMOTE_COMMIT=$(git rev-parse origin/$BRANCH)
-
-if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
-    echo "Updates found. Pulling the latest changes..."
-
-    echo "Stopping the service: $SERVICE_NAME"
-    # Stop the service
-    systemctl stop $SERVICE_NAME
-    
-    # Discard any local changes
-    git restore --staged .
-    git restore .
-    git clean -fd
-    git reset --hard origin/$BRANCH
-    
-    # Pull the latest updates
-    git pull
-fi
-
-# Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
-LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
+# Fetch the latest binary
+new_release=$(fetch)
 
 # Extract the current ExecStart binary path from the service configuration file
 CURRENT_BINARY=$(grep "^ExecStart=" $SERVICE_CONFIG_PATH | cut -d'=' -f2)
 
-if [ "$LATEST_BINARY" != "$CURRENT_BINARY" ]; then
+# Find the most recent node binary ending with -linux-amd64 in the REPO_PATH
+LATEST_BINARY=$(ls -t $REPO_PATH/node-*-linux-amd64 | head -n 1)
+
+if [ "$new_release" = "true" ] || [ "$LATEST_BINARY" != "$CURRENT_BINARY" ]; then
     if [[ -x "$LATEST_BINARY" ]]; then
         echo "Updating service configuration with the latest binary: $LATEST_BINARY"
         
