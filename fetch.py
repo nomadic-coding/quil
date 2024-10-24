@@ -148,12 +148,60 @@ def get_config(commands):
         else:
             config[key] = parsed_result
 
+    # Overwrite node_info_max_frame with leader_frame
+    if 'leader_frame' in config and config['leader_frame'] is not None:
+        config['node_info_max_frame'] = config['leader_frame']
+
+    # Check if there are multiple entries of the return leader frame entry with the same frame_number as node_info_max_frame
+    if 'node_info_max_frame' in config:
+        max_frame = config['node_info_max_frame']
+        debug_print(f"Checking for stuck frame. Max frame: {max_frame}")
+        check_command = f"grep -a '\"returning leader frame\".*\"frame_number\":{max_frame}' /var/log/syslog"
+        frame_entries = execute_command(check_command).split('\n')
+        same_frame_count = len([entry for entry in frame_entries if entry.strip()])
+        debug_print(f"Number of entries with the same frame: {same_frame_count}")
+        
+        if same_frame_count >= 10:
+            config['stuck_on_frame'] = True
+            config['stuck_frame_count'] = same_frame_count
+            debug_print(f"Node appears to be stuck. Frame count: {same_frame_count}")
+            
+            # Extract the "ts" value from the first and last log entries
+            try:
+                debug_print(frame_entries)
+                try:
+                    first_ts = json.loads('{' + frame_entries[0].split('{', 1)[1])["ts"]
+                    last_ts = json.loads('{' + frame_entries[-1].split('{', 1)[1])["ts"]
+                    debug_print(f"First timestamp: {first_ts}, Last timestamp: {last_ts}")
+                except (IndexError, KeyError, json.JSONDecodeError) as e:
+                    debug_print(f"Error processing frame entries: {e}")
+                    first_ts = last_ts = None
+                
+                # Calculate the time the node has been stuck
+                stuck_duration = last_ts - first_ts
+                
+                config['stuck_since'] = first_ts
+                minutes, seconds = divmod(stuck_duration, 60)
+                config['stuck_duration'] = f"{int(minutes)} minutes and {int(seconds)} seconds"
+                debug_print(f"Stuck duration: {stuck_duration} seconds")
+            except (IndexError, KeyError, json.JSONDecodeError) as e:
+                debug_print(f"Error processing frame entries: {e}")
+                config['stuck_since'] = None
+                config['stuck_duration_seconds'] = None
+            
+        else:
+            config['stuck_on_frame'] = False
+            debug_print("Node does not appear to be stuck")
+
     json_output = json.dumps(config, indent=2)
+    debug_print("Final config:")
+    debug_print(json_output)
     print(json_output)
     
     return json_output
 
 commands = [
+    {"command": "grep -a '\"checking peer list\"' /var/log/syslog | tail -n 1 | sed -E 's/.*\"current_head_frame\":([0-9]+).*/\\1/'", "key": "leader_frame", "parser": lambda x, y: int(x) if x.isdigit() else None},
     {"command": "grep -E 'listen(Multiaddr|GrpcMultiaddr)' /root/ceremonyclient/node/.config/config.yml", "key": "listen_addresses", "parser": parse_grep_listen_addresses, "update_dict": True},
     {"command": "nproc", "key": "cpu_count", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "uptime", "key": "system_uptime", "parser": parse_system_uptime, "update_dict": True},
