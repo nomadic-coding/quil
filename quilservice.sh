@@ -13,11 +13,7 @@ exit_message() {
 # Set a trap to call exit_message on any error
 trap exit_message ERR
 
-# Step 0: Welcome
-echo "This script will install your Quilibrium node as a service and start it."
-echo "Made with 🔥 by LaMat"
-echo "Processing..."
-sleep 7  # Add a 7-second delay
+service ceremonyclient stop
 
 # Step 1: Create Ceremonyclient Service
 echo "Creating Ceremonyclient Service..."
