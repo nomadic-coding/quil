@@ -85,13 +85,17 @@ def parse_disk_usage(output, data_type=None):
 def verify_sha3_256_checksum(directory):
     """Verify the SHA3-256 checksum of the binary file in the specified directory."""
     debug_print(f"Verifying SHA3-256 checksum in directory: {directory}")
-    files = sorted([f for f in os.listdir(directory) if f.endswith('-linux-amd64')])
-    if not files:
-        debug_print("No binary files found.")
-        return "No binary files found."
+    active_node_path = os.path.join(directory, "active-node")
+    if not os.path.exists(active_node_path):
+        debug_print("No active-node symlink found.")
+        return "No active-node symlink found."
     
-    file_path = os.path.join(directory, files[-1])
-    digest_file_path = file_path + '.dgst'
+    file_path = os.path.realpath(active_node_path)
+    digest_file_path = "/root/ceremonyclient/node/node-*.dgst"
+
+    if not os.path.exists(digest_file_path):
+        debug_print("No digest file found.")
+        return "No digest file found."
 
     with open(digest_file_path, 'r') as dgst_file:
         for line in dgst_file:
@@ -210,27 +214,13 @@ commands = [
     {"command": "uptime", "key": "system_uptime", "parser": parse_system_uptime, "update_dict": True},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --abbrev-ref --short HEAD", "key": "git_branch"},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --short HEAD", "key": "git_commit_hash"},
-    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node"), "key": "bin_checksum"},
+    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node/active-node"), "key": "bin_checksum"},
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": "grep -a '\"completed duration proof\"' /var/log/syslog | tail -n 1", "key": "proof_details", "parser": parse_proof_details, "update_dict": True},
-    
+    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/active-node -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True}
 ]
-
-def get_latest_binary_command(command_template):
-    files = sorted([f for f in os.listdir("/root/ceremonyclient/node/") if f.endswith('-linux-amd64')])
-    if files:
-        latest_binary = files[-1]
-        return command_template.format(binary=latest_binary), latest_binary
-    else:
-        return None, None
-
-node_info_command_template = "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/{binary} -node-info"
-latest_node_info_command, latest_binary = get_latest_binary_command(node_info_command_template)
-
-if latest_node_info_command:
-    commands.append({"command": latest_node_info_command, "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True})
 
 initial_config = {}
 for cmd in commands:
