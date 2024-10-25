@@ -19,33 +19,74 @@ echo "Made with 🔥 by LaMat"
 echo "Processing..."
 sleep 7  # Add a 7-second delay
 
-# Create Ceremonyclient Service
-echo "Creating Ceremonyclient Service"
+# Step 1: Create Ceremonyclient Service
+echo "Creating Ceremonyclient Service..."
 sleep 1  # Add a 1-second delay
-sudo tee /lib/systemd/system/ceremonyclient.service > /dev/null <<EOF
+
+# Define the service file path
+SERVICE_FILE="/lib/systemd/system/ceremonyclient.service"
+
+sudo tee $SERVICE_FILE > /dev/null <<EOF
 [Unit]
 Description=Ceremony Client Go App Service
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
+Environment=GOMAXPROCS=18
 Type=simple
-Restart=always
-RestartSec=5s
-WorkingDirectory=/root/ceremonyclient/node
-Environment=GOEXPERIMENT=arenas
-ExecStart=/root/ceremonyclient/node/node-1.4.19-linux-amd64
+WorkingDirectory=/root/ceremonyclient/node/
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+User=root
+ExecStart=/root/ceremonyclient/node/active-node
+ExecStop=/bin/kill -s SIGINT \$MAINPID
+ExecReload=/bin/kill -s SIGINT \$MAINPID && /root/ceremonyclient/node/active-node
+KillSignal=SIGINT
+RestartKillSignal=SIGINT
+FinalKillSignal=SIGKILL
+TimeoutStopSec=30
+PIDFile=/var/run/ceremonyclient.pid
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd manager configuration
+# Step 2: Create symlink if not already exist
+echo "Checking for the latest node file (node-*-linux-amd64) and creating symlink..."
+sleep 1  # Add a 1-second delay
+
+# Define the directory and symlink paths
+NODE_DIR="/root/ceremonyclient/node/"
+SYMLINK="$NODE_DIR/active-node"
+
+# Find the newest node-* file ending with -linux-amd64
+NEWEST_NODE_FILE=$(ls -t $NODE_DIR/node-*-linux-amd64 2>/dev/null | head -n 1)
+
+if [[ -z "$NEWEST_NODE_FILE" ]]; then
+    echo "Error: No file matching node-*-linux-amd64 found in $NODE_DIR."
+    exit 1
+fi
+
+# Check if the symlink already exists and points to the correct file
+if [[ -L "$SYMLINK" && "$(readlink "$SYMLINK")" == "$NEWEST_NODE_FILE" ]]; then
+    echo "Symlink already exists and is up to date: $SYMLINK -> $NEWEST_NODE_FILE"
+else
+    echo "Creating/Updating symlink: $SYMLINK -> $NEWEST_NODE_FILE"
+    ln -sf "$NEWEST_NODE_FILE" "$SYMLINK"
+fi
+
+# Step 3: Reload systemd manager configuration
+echo "Reloading systemd manager configuration..."
 sudo systemctl daemon-reload
 
-# Start the ceremonyclient service
-echo "Starting Ceremonyclient Service"
+# Step 4: Enable and start the ceremonyclient service
+echo "Enabling and starting Ceremonyclient Service..."
 sleep 1  # Add a 1-second delay
 sudo systemctl enable ceremonyclient
 sudo systemctl start ceremonyclient
 
-# Final messages
+# Step 5: Final messages
 echo "Now your node is running as a service!"
