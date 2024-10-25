@@ -34,7 +34,6 @@ Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
-Environment=GOMAXPROCS=18
 Type=simple
 WorkingDirectory=/root/ceremonyclient/node/
 Restart=on-failure
