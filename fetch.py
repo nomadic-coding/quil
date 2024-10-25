@@ -115,12 +115,15 @@ def verify_sha3_256_checksum(directory):
 
 def parse_proof_details(output, data_type=None):
     """Parse the log entry for the increment and time_taken."""
-    increment_match = re.search(r'"increment":(\d+)', output)
     time_taken_match = re.search(r'"time_taken":([\d.]+)', output)
     ts_proof_match = re.search(r'"ts":([\d.]+)', output)
     
+    # Get the last log entry for the increment
+    increment_command = "grep -a 'publishing proof batch' /var/log/syslog | tail -n 1 | sed -E 's/.*\"increment\":([0-9]+).*/\\1/'"
+    increment_output = execute_command(increment_command)
+    
     parsed_output = {
-        "proof_increment": int(increment_match.group(1)) if increment_match else 0,
+        "proof_increment": int(increment_output) if increment_output.isdigit() else 0,
         "proof_time": float(time_taken_match.group(1)) if time_taken_match else 0.0,
         "ts_proof": float(ts_proof_match.group(1)) if ts_proof_match else 0.0
     }
@@ -212,6 +215,7 @@ commands = [
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": "grep -a '\"completed duration proof\"' /var/log/syslog | tail -n 1", "key": "proof_details", "parser": parse_proof_details, "update_dict": True},
+    
 ]
 
 def get_latest_binary_command(command_template):
