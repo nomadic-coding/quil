@@ -4,6 +4,7 @@ import re
 import hashlib
 import os
 import argparse
+import glob
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Fetch and parse system configuration.")
@@ -91,11 +92,14 @@ def verify_sha3_256_checksum(directory):
         return "No active-node symlink found."
     
     file_path = os.path.realpath(active_node_path)
-    digest_file_path = "/root/ceremonyclient/node/node-*.dgst"
+    digest_file_pattern = "/root/ceremonyclient/node/node-*-linux-amd64.dgst"
+    digest_files = glob.glob(digest_file_pattern)
 
-    if not os.path.exists(digest_file_path):
+    if not digest_files:
         debug_print("No digest file found.")
         return "No digest file found."
+    
+    digest_file_path = digest_files[0]  # Use the first matching file
 
     with open(digest_file_path, 'r') as dgst_file:
         for line in dgst_file:
@@ -155,9 +159,6 @@ def get_config(commands):
         else:
             config[key] = parsed_result
 
-    # Overwrite node_info_max_frame with leader_frame
-    if 'leader_frame' in config and config['leader_frame'] is not None:
-        config['node_info_max_frame'] = config['leader_frame']
 
     # Check if there are multiple entries of the return leader frame entry with the same frame_number as node_info_max_frame
     if 'node_info_max_frame' in config:
@@ -208,13 +209,12 @@ def get_config(commands):
     return json_output
 
 commands = [
-    {"command": "grep -a '\"checking peer list\"' /var/log/syslog | tail -n 1 | sed -E 's/.*\"current_head_frame\":([0-9]+).*/\\1/'", "key": "leader_frame", "parser": lambda x, y: int(x) if x.isdigit() else None},
     {"command": "grep -E 'listen(Multiaddr|GrpcMultiaddr)' /root/ceremonyclient/node/.config/config.yml", "key": "listen_addresses", "parser": parse_grep_listen_addresses, "update_dict": True},
     {"command": "nproc", "key": "cpu_count", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "uptime", "key": "system_uptime", "parser": parse_system_uptime, "update_dict": True},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --abbrev-ref --short HEAD", "key": "git_branch"},
     {"command": "cd /root/ceremonyclient/node/ && git rev-parse --short HEAD", "key": "git_commit_hash"},
-    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node/active-node"), "key": "bin_checksum"},
+    {"command": lambda: verify_sha3_256_checksum("/root/ceremonyclient/node/"), "key": "bin_checksum"},
     {"command": "grep -A 10 '\\[Service\\]' /lib/systemd/system/ceremonyclient.service | grep 'Environment=GOMAXPROCS=' | sed 's/.*Environment=GOMAXPROCS=//'", "key": "maxprocs", "parser": lambda x, y: int(x) if x.isdigit() else 0},
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
