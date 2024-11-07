@@ -138,6 +138,17 @@ def parse_proof_details(output, data_type=None):
     debug_print(f"Parsed proof details: {parsed_output}")
     return parsed_output
 
+def parse_multisig_paths(output, data_type=None):
+    """Parse the multisigProverEnrollmentPaths from config."""
+    paths = []
+    for line in output.split("\n"):
+        if line.strip():  # Only process non-empty lines
+            paths.append(line.strip())
+    
+    config = {"multisig_paths": paths}
+    debug_print(f"Parsed multisig paths: {config}")
+    return config
+
 def get_config(commands):
     """Execute a list of commands and return their results as a JSON object."""
     config = {}
@@ -219,7 +230,11 @@ commands = [
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": "grep -a '\"completed duration proof\"' /var/log/syslog | tail -n 1", "key": "proof_details", "parser": parse_proof_details, "update_dict": True},
-    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/active-node -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True}
+    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/active-node -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
+    {"command": "grep -A 10 'multisigProverEnrollmentPaths:' /root/ceremonyclient/node/.config/config.yml | grep '^\s*-' | sed 's/^[[:space:]]*-[[:space:]]*//'",
+     "key": "multisig_paths", 
+     "parser": parse_multisig_paths,
+     "update_dict": True}
 ]
 
 initial_config = {}
