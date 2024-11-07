@@ -46,7 +46,10 @@ def parse_node_info(output, data_type=None):
                     value = data_type[key](value)
                 config[key] = value
             else:
-                config[f"node_info_{line.strip().lower().replace(' ', '_')}"] = ""
+                line_text = line.strip().lower().replace(' ', '_')
+                if "prover_ring" in line_text:
+                    debug_print(f"Found prover ring line: {line}")
+                    config[f"node_info_prover_ring"] = line
     debug_print(f"Parsed node info: {config}")
     return config
 
@@ -230,7 +233,11 @@ commands = [
     {"command": "grep -a 'recalibrating difficulty metric' /var/log/syslog | tail -n 1 | sed 's/^[^{]*//g' | jq '. | {ts: .ts, next_difficulty_metric: .next_difficulty_metric}'", "key": "difficulty_metric", "parser": parse_json_output, "update_dict": True},
     {"command": "df / | grep / | awk '{print $5}'", "key": "disk_usage", "parser": parse_disk_usage, "update_dict": True},
     {"command": "grep -a '\"completed duration proof\"' /var/log/syslog | tail -n 1", "key": "proof_details", "parser": parse_proof_details, "update_dict": True},
-    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/active-node -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {"node_info_owned_balance": float, "node_info_unconfirmed_balance": float}, "update_dict": True},
+    {"command": "cd /root/ceremonyclient/node/ && /root/ceremonyclient/node/active-node -node-info", "key": "node_info", "parser": parse_node_info, "data_type": {
+        "node_info_owned_balance": float,
+        "node_info_unconfirmed_balance": float,
+        "node_info_seniority": int
+    }, "update_dict": True},
     {"command": "grep -A 10 'multisigProverEnrollmentPaths:' /root/ceremonyclient/node/.config/config.yml | grep '^\s*-' | sed 's/^[[:space:]]*-[[:space:]]*//'",
      "key": "multisig_paths", 
      "parser": parse_multisig_paths,
