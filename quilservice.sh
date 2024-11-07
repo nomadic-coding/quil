@@ -13,8 +13,6 @@ exit_message() {
 # Set a trap to call exit_message on any error
 trap exit_message ERR
 
-service ceremonyclient stop
-
 # Step 1: Create Ceremonyclient Service
 echo "Creating Ceremonyclient Service..."
 sleep 1  # Add a 1-second delay
